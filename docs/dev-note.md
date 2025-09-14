@@ -590,3 +590,145 @@ git push -u origin feature/login    # 推送到远程
 
 
 
+# App开启界面
+
+`./mobile/App.tsx`
+
+```jsx
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import SplashScreen from './screens/SplashScreen';  // 导入开机页面
+import LoginScreen from './screens/LoginScreen';    // 导入登录页面
+
+const Stack = createStackNavigator();
+
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Splash">
+        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default App;
+
+```
+
+`./mobile/screens/SplashScreen.tsx`
+
+```tsx
+import React, { useEffect } from 'react';
+import { View, Text, Animated, StyleSheet, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
+const SplashScreen = () => {
+  const navigation = useNavigation();
+  const fadeAnim = new Animated.Value(0); // 初始透明度为0
+
+  useEffect(() => {
+    // 设置淡入动画
+    Animated.timing(fadeAnim, {
+      toValue: 1,  // 目标透明度
+      duration: 1500,  // 动画持续时间
+      useNativeDriver: true,
+    }).start();
+
+    // 2秒后跳转到登录页面
+    const timer = setTimeout(() => {
+      navigation.replace('Login');  // 跳转到登录页面
+    }, 2000); // 2秒
+
+    return () => clearTimeout(timer); // 清除定时器
+  }, [fadeAnim, navigation]);
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={{ ...styles.logoContainer, opacity: fadeAnim }}>
+        {/* 如果 logo 是图片，使用 Image 组件 */}
+        <Image source={require('../assets/Logo.png')} style={styles.logo} />
+        <Text style={styles.logoText}>RenalFlow</Text>
+        <Text style={styles.slogan}>From daily metrics to better kidney care</Text>
+      </Animated.View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',  // 背景色为黑色
+  },
+  logoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 100, // 设置 logo 的大小
+    height: 100,
+    marginBottom: 20,
+  },
+  logoText: {
+    fontSize: 40, // 设置 logo 文本的字体大小
+    fontWeight: 'bold',
+    color: '#56D13E',  // 与 logo 颜色相匹配的绿色
+  },
+  slogan: {
+    color: '#fff',  // 白色字体
+    marginTop: 10,
+    fontSize: 16,  // 设置标语的字体大小
+  },
+});
+
+export default SplashScreen;
+
+```
+
+`./mobile/screens/LoginScreen.tsx`
+
+```tsx
+import React from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+
+const LoginScreen = () => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>RenalFlow</Text>
+      <TextInput style={styles.input} placeholder="User Name" />
+      <TextInput style={styles.input} placeholder="Password" secureTextEntry />
+      <Button title="Login" onPress={() => {}} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2E2E2E',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#56D13E', // 与开机页面的颜色一致
+  },
+  input: {
+    width: 250,
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    margin: 10,
+    paddingLeft: 10,
+  },
+});
+
+export default LoginScreen;
+
+```
+

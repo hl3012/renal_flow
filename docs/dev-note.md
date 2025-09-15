@@ -678,7 +678,7 @@ git merge main
 
 ## 前端
 
-## 前端页面主入口
+### 前端页面主入口
 
 ```tsx
 import React from 'react';
@@ -687,11 +687,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token: string }; 
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -700,8 +703,9 @@ const App = () => (
   <NavigationContainer>
     <Stack.Navigator initialRouteName="Splash">
       <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }}/>
     </Stack.Navigator>
   </NavigationContainer>
 );
@@ -718,36 +722,50 @@ export default App;
 `./mobile/screens/SplashScreen.tsx`
 
 ```tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 const SplashScreen = () => {
-  const navigation = useNavigation();
-  const fadeAnim = new Animated.Value(0); // 初始透明度为0
+  type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
+  const navigation = useNavigation<SplashScreenNavigationProp>();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    // 设置淡入动画
-    Animated.timing(fadeAnim, {
-      toValue: 1,  // 目标透明度
-      duration: 1500,  // 动画持续时间
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // 2秒后跳转到登录页面
     const timer = setTimeout(() => {
-      navigation.replace('Login');  // 跳转到登录页面
-    }, 2000); // 2秒
+      navigation.replace('Login');
+    }, 2000);
 
-    return () => clearTimeout(timer); // 清除定时器
-  }, [fadeAnim, navigation]);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ ...styles.logoContainer, opacity: fadeAnim }}>
-        {/* 如果 logo 是图片，使用 Image 组件 */}
-        <Image source={require('../assets/Logo.png')} style={styles.logo} />
-        <Text style={styles.logoText}>RenalFlow</Text>
+      <Animated.View
+        style={{
+          ...styles.logoContainer,
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        }}
+      >
+        <Image source={require('../assets/Logo.png')} style={[styles.logo, { opacity: 0.6 }]} />
+        <Text style={[styles.logoText, { opacity: 0.6 }]}>RenalFlow</Text>
         <Text style={styles.slogan}>From daily metrics to better kidney care</Text>
       </Animated.View>
     </View>
@@ -759,26 +777,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',  // 背景色为黑色
+    backgroundColor: '#000000ff', 
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 100, // 设置 logo 的大小
-    height: 100,
-    marginBottom: 20,
+    width: 75, 
+    height: 75,
+    marginBottom: 5,
   },
   logoText: {
-    fontSize: 40, // 设置 logo 文本的字体大小
+    fontSize: 28, 
     fontWeight: 'bold',
-    color: '#56D13E',  // 与 logo 颜色相匹配的绿色
+    color: '#2E7D32',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
   },
   slogan: {
-    color: '#fff',  // 白色字体
-    marginTop: 10,
-    fontSize: 16,  // 设置标语的字体大小
+    fontSize: 14, 
+    color: '#a69f9f71', 
+    marginTop: 5,
+    textAlign: 'center',
   },
 });
 
@@ -792,26 +814,50 @@ export default SplashScreen;
 
 ```tsx
 import React from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 
-
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen = () => {
-  
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<LoginScreenNavigationProp>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>RenalFlow</Text>
-      <TextInput style={styles.input} placeholder="User Name" />
-      <TextInput style={styles.input} placeholder="Password" secureTextEntry />
-      <Button title="Login" onPress={() => {}} />
-      <Button
-        title="Go to Register"
-        onPress={() => navigation.navigate('Register')}
+
+      <Text style={styles.logoText}>RenalFlow</Text>
+
+
+      <TextInput
+        style={styles.input}
+        placeholder="User Name"
+        placeholderTextColor="rgba(255,255,255,0.5)"
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="rgba(255,255,255,0.5)"
+        secureTextEntry
+      />
+
+
+      <TouchableOpacity style={styles.button} onPress={() => {}}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+
+      <View style={styles.rowLinks}>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={styles.linkText}>New User?</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.linkText}>Forgot Password?</Text>
+        </TouchableOpacity>
+      </View>
+
+
     </View>
   );
 };
@@ -819,22 +865,57 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000ff', // 和 Splash 一致
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2E2E2E',
+    paddingHorizontal: 30,
   },
-  title: {
-    fontSize: 24,
+  logoText: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#56D13E', // 与开机页面的颜色一致
+    color: '#2E7D32',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
   },
   input: {
-    width: 250,
+    width: '100%',
     height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    margin: 10,
-    paddingLeft: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginVertical: 8,
+    color: '#fff',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#2E7D32',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  rowLinks: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 12,
+  },
+  linkText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
 });
 
@@ -844,20 +925,22 @@ export default LoginScreen;
 
 
 
-## 用户注册页面
+### 用户注册页面
+
+`./mobile/screens/RegisterScreen.tsx`
 
 ```tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import api from '../utils/axios';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
+import api from '../utils/axios';
 
+type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
 const RegisterScreen = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-
+  const navigation = useNavigation<RegisterScreenNavigationProp>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -868,11 +951,10 @@ const RegisterScreen = () => {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-
     try {
       const res = await api.post('/api/auth/register', { email, password });
       Alert.alert('Success', 'Registration successful');
-      navigation.replace('Login'); // 注册成功后跳转到登录
+      navigation.replace('Login'); 
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.message || 'Registration failed');
     }
@@ -880,10 +962,12 @@ const RegisterScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
+      <Text style={styles.logoText}>RenalFlow</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="rgba(255,255,255,0.5)"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -891,18 +975,27 @@ const RegisterScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="rgba(255,255,255,0.5)"
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
       />
       <TextInput
         style={styles.input}
         placeholder="Confirm Password"
+        placeholderTextColor="rgba(255,255,255,0.5)"
+        secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
-        secureTextEntry
       />
-      <Button title="Register" onPress={handleRegister} />
+
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Register</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
+        <Text style={styles.linkText}>Back to Login</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -910,25 +1003,54 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000ff', 
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2E2E2E',
+    paddingHorizontal: 30,
   },
-  title: {
-    fontSize: 24,
+  logoText: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#56D13E',
-    marginBottom: 20,
+    color: '#2E7D32',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
   },
   input: {
-    width: 250,
+    width: '100%',
     height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    margin: 10,
-    paddingLeft: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginVertical: 8,
+    color: '#fff',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#2E7D32',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  link: {
+    marginTop: 12,
+  },
+  linkText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
 });
 
@@ -936,7 +1058,167 @@ export default RegisterScreen;
 
 ```
 
+### 重置密码页面
+
+`./mobile/screens/ForgotPasswordScreen.tsx`
+
+```jsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+import api from '../utils/axios';
+import { Ionicons } from '@expo/vector-icons'; 
+
+type ForgotResetScreenProp = StackNavigationProp<RootStackParamList, 'ForgotPassword'>;
+
+const ForgotResetScreen = () => {
+  const navigation = useNavigation<ForgotResetScreenProp>();
+  const [stage, setStage] = useState<'email' | 'reset'>('email');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleSendEmail = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+    try {
+      await api.post('/api/auth/forgot-password', { email });
+      Alert.alert('Success', 'Password reset link sent to your email');
+      setStage('reset'); 
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Request failed');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    try {
+      await api.post('/api/auth/reset-password', { email, password });
+      Alert.alert('Success', 'Password reset successful');
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Reset failed');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+
+      <TouchableOpacity
+        style={styles.back}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <Text style={styles.logoText}>RenalFlow</Text>
+
+      {stage === 'email' ? (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TouchableOpacity style={styles.button} onPress={handleSendEmail}>
+            <Text style={styles.buttonText}>Send Reset Link</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="New Password"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
+            <Text style={styles.buttonText}>Reset Password</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  back: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+  },
+  logoText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
+  },
+  input: {
+    width: '100%',
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginVertical: 8,
+    color: '#fff',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#2E7D32',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+});
+
+export default ForgotResetScreen;
+
+```
 
 
-## 忘记密码
 

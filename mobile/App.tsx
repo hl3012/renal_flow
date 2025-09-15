@@ -1,41 +1,31 @@
-// import React from 'react';
-// import { NavigationContainer } from '@react-navigation/native';
-// import { createStackNavigator } from '@react-navigation/stack';
-// import SplashScreen from './screens/SplashScreen';  // 导入开机页面
-// import LoginScreen from './screens/LoginScreen';    // 导入登录页面
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import SplashScreen from './screens/SplashScreen';
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 
+export type RootStackParamList = {
+  Splash: undefined;
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token: string }; // token 从邮件链接带来
+};
 
-// const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
-// const App = () => {
-//   return (
-//     <NavigationContainer>
-//       <Stack.Navigator initialRouteName="Splash">
-//         <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-//         <Stack.Screen name="Login" component={LoginScreen} />
-//       </Stack.Navigator>
-//     </NavigationContainer>
-//   );
-// };
+const App = () => (
+  <NavigationContainer>
+    <Stack.Navigator initialRouteName="Splash">
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }}/>
+    </Stack.Navigator>
+  </NavigationContainer>
+);
 
-// export default App;
+export default App;
 
-import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import api from './utils/axios';
-
-export default function App() {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    api.get('/api/health')
-      .then(res => setMessage(res.data.message))
-      .catch(() => setMessage('Error connecting to server'));
-  }, []);
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>{message || 'Loading...'}</Text>
-    </View>
-  );
-}

@@ -332,6 +332,9 @@ npm install victory-native
 # 或者如果上面安装有问题，可以尝试
 npx expo install react-native-svg
 npm install victory-native
+
+#
+npm install axios
 ```
 
 
@@ -529,36 +532,106 @@ RenalFlow/
 
 
 
-## 测试项目初始化
 
-### 测试后端
 
-创建`server/src/index.ts`：
+## 配置axios
 
-```typescript
-console.log('Server initialized');
+`./mobile/utils/axios.ts`
+
+```ts
+import axios from 'axios';
+
+const api = axios.create({
+  // Change this to your server URL
+  baseURL: 'http://10.0.0.166:4000',
+  timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+
+api.interceptors.request.use(
+  async config => {
+    const token = ''; 
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+export default api;
+
 ```
+
+
+
+## 测试代码
+
+`./mobile/App.tsx`
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Text, View } from 'react-native';
+import api from './utils/axios';
+
+export default function App() {
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    api.get('/api/health')
+      .then(res => setMessage(res.data.message))
+      .catch(() => setMessage('Error connecting to server'));
+  }, []);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>{message || 'Loading...'}</Text>
+    </View>
+  );
+}
+```
+
+`./mobile/index.tsx`
+
+```ts
+import { registerRootComponent } from 'expo';
+
+import App from './App';
+
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
+// It also ensures that whether you load the app in Expo Go or in a native build,
+// the environment is set up appropriately
+registerRootComponent(App);
+
+```
+
+`./server/src/app.ts`
+
+```ts
+
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+dotenv.config();
+const app = express();
+app.use(cors());
+app.get('/api/health', (req, res) => {
+    res.json({status: 'ok', message:'RenalFlow server running'})
+});
+
+export default app;
+```
+
+
 
 在server文件夹下
 
 ```
 npm run dev
-```
-
-### 测试前端
-
-`mobile/App.tsx`
-
-```tsx
-import { Text, View } from 'react-native';
-
-export default function App() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Test!</Text>
-    </View>
-  );
-}
 ```
 
 在mobile文件夹下
@@ -571,7 +644,7 @@ npx expo start
 
 
 
-## Git
+# Git
 
 ```
 # 查看本地所有分支 *开头的是当前所在分支
@@ -586,37 +659,61 @@ git commit -m "feat: add login page"
 git push -u origin feature/login    # 推送到远程
 ```
 
+更新项目前从git上拉取最新的代码
+
+```
+git checkout main
+git pull origin main
+git checkout MA
+git merge main
+```
 
 
 
+# 用户登陆注册功能
 
-# App开启界面
+## 后端
 
-`./mobile/App.tsx`
 
-```jsx
+
+## 前端
+
+## 前端页面主入口
+
+```tsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import SplashScreen from './screens/SplashScreen';  // 导入开机页面
-import LoginScreen from './screens/LoginScreen';    // 导入登录页面
+import SplashScreen from './screens/SplashScreen';
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
 
-const Stack = createStackNavigator();
-
-const App = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Splash">
-        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+export type RootStackParamList = {
+  Splash: undefined;
+  Login: undefined;
+  Register: undefined;
 };
+
+const Stack = createStackNavigator<RootStackParamList>();
+
+const App = () => (
+  <NavigationContainer>
+    <Stack.Navigator initialRouteName="Splash">
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  </NavigationContainer>
+);
 
 export default App;
 
+
 ```
+
+
+
+### App开启动画页面
 
 `./mobile/screens/SplashScreen.tsx`
 
@@ -689,19 +786,32 @@ export default SplashScreen;
 
 ```
 
+### 用户登录页面
+
 `./mobile/screens/LoginScreen.tsx`
 
 ```tsx
 import React from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+
+
 
 const LoginScreen = () => {
+  
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>RenalFlow</Text>
       <TextInput style={styles.input} placeholder="User Name" />
       <TextInput style={styles.input} placeholder="Password" secureTextEntry />
       <Button title="Login" onPress={() => {}} />
+      <Button
+        title="Go to Register"
+        onPress={() => navigation.navigate('Register')}
+      />
     </View>
   );
 };
@@ -731,4 +841,102 @@ const styles = StyleSheet.create({
 export default LoginScreen;
 
 ```
+
+
+
+## 用户注册页面
+
+```tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import api from '../utils/axios';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
+
+
+const RegisterScreen = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    try {
+      const res = await api.post('/api/auth/register', { email, password });
+      Alert.alert('Success', 'Registration successful');
+      navigation.replace('Login'); // 注册成功后跳转到登录
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Registration failed');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Register</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Confirm Password"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+      />
+      <Button title="Register" onPress={handleRegister} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2E2E2E',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#56D13E',
+    marginBottom: 20,
+  },
+  input: {
+    width: 250,
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    margin: 10,
+    paddingLeft: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+});
+
+export default RegisterScreen;
+
+```
+
+
+
+## 忘记密码
 

@@ -1,33 +1,47 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 const SplashScreen = () => {
-  const navigation = useNavigation();
-  const fadeAnim = new Animated.Value(0); // 初始透明度为0
+  type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
+  const navigation = useNavigation<SplashScreenNavigationProp>();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    // 设置淡入动画
-    Animated.timing(fadeAnim, {
-      toValue: 1,  // 目标透明度
-      duration: 1500,  // 动画持续时间
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // 2秒后跳转到登录页面
     const timer = setTimeout(() => {
-      navigation.replace('Login');  // 跳转到登录页面
-    }, 2000); // 2秒
+      navigation.replace('Login');
+    }, 2000);
 
-    return () => clearTimeout(timer); // 清除定时器
-  }, [fadeAnim, navigation]);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ ...styles.logoContainer, opacity: fadeAnim }}>
-        {/* 如果 logo 是图片，使用 Image 组件 */}
-        <Image source={require('../assets/Logo.png')} style={styles.logo} />
-        <Text style={styles.logoText}>RenalFlow</Text>
+      <Animated.View
+        style={{
+          ...styles.logoContainer,
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        }}
+      >
+        <Image source={require('../assets/Logo.png')} style={[styles.logo, { opacity: 0.6 }]} />
+        <Text style={[styles.logoText, { opacity: 0.6 }]}>RenalFlow</Text>
         <Text style={styles.slogan}>From daily metrics to better kidney care</Text>
       </Animated.View>
     </View>
@@ -39,26 +53,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',  // 背景色为黑色
+    backgroundColor: '#000000ff', 
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 100, // 设置 logo 的大小
-    height: 100,
-    marginBottom: 20,
+    width: 75, 
+    height: 75,
+    marginBottom: 5,
   },
   logoText: {
-    fontSize: 40, // 设置 logo 文本的字体大小
+    fontSize: 28, 
     fontWeight: 'bold',
-    color: '#56D13E',  // 与 logo 颜色相匹配的绿色
+    color: '#2E7D32',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 3,
   },
   slogan: {
-    color: '#fff',  // 白色字体
-    marginTop: 10,
-    fontSize: 16,  // 设置标语的字体大小
+    fontSize: 14, 
+    color: '#a69f9f71', 
+    marginTop: 5,
+    textAlign: 'center',
   },
 });
 

@@ -11,7 +11,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  ResetPassword: { token: string }; // token 从邮件链接带来
+  ResetPassword: { token: string }; 
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

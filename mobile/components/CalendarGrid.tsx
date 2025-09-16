@@ -273,7 +273,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
         />
       </View>
 
-      {/* 选中日期的待办事项 */}
+      {/* // 在 CalendarGrid 组件的返回部分，确保待办事项区域可以滚动 */}
       <View style={styles.todoSection}>
         <View style={styles.todoHeader}>
           <Text style={styles.todoTitle}>
@@ -292,16 +292,18 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
           </TouchableOpacity>
         </View>
         
-        {getTodosForDate(selectedDate).length > 0 ? (
-          getTodosForDate(selectedDate).map((todo, index) => (
-            <View key={index} style={styles.todoItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#87ceeb" />
-              <Text style={styles.todoText}>{todo}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.noTodosText}>No tasks scheduled for this day</Text>
-        )}
+        <ScrollView style={styles.todoScrollView}>
+          {getTodosForDate(selectedDate).length > 0 ? (
+            getTodosForDate(selectedDate).map((todo, index) => (
+              <View key={index} style={styles.todoItem}>
+                <Ionicons name="checkmark-circle" size={16} color="#87ceeb" />
+                <Text style={styles.todoText}>{todo}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noTodosText}>No tasks scheduled for this day</Text>
+          )}
+        </ScrollView>
       </View>
 
       {/* 年份选择模态框 */}
@@ -651,6 +653,9 @@ const styles = StyleSheet.create({
   addTodoButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  todoScrollView: {
+    maxHeight: 150, // 限制高度，确保不会占用太多空间
   },
 });
 

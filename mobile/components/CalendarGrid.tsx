@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, 
-  TouchableWithoutFeedback, ScrollView, TextInput, Alert, Dimensions 
+  TouchableWithoutFeedback, ScrollView, TextInput, Alert, Dimensions,
+  KeyboardAvoidingView, Platform, Keyboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface CalendarGridProps {
   onDateSelect?: (date: Date) => void;
@@ -27,6 +28,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showAddTodoModal, setShowAddTodoModal] = useState(false);
   const [newTodoText, setNewTodoText] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   
   // 待办事项数据
@@ -49,6 +51,27 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
       }, 100);
     }
   }, [dates]);
+
+  // 监听键盘显示/隐藏
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const generateDates = (year: number, month: number) => {
     const dateArray: DateItem[] = [];
@@ -216,223 +239,244 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
   const monthOptions = Array.from({ length: 12 }, (_, i) => i);
 
   return (
-    <View style={styles.container}>
-      {/* 年份和月份选择器 */}
-      <View style={styles.pickerContainer}>
-        <TouchableOpacity 
-          style={styles.pickerWrapper}
-          onPress={() => setShowYearPicker(true)}
-        >
-          <Ionicons name="calendar" size={20} color="#fff" style={styles.pickerIcon} />
-          <View style={styles.picker}>
-            <Text style={styles.pickerLabel}>Year:</Text>
-            <View style={styles.pickerValue}>
-              <Text style={styles.pickerValueText}>{selectedYear}</Text>
-              <Ionicons name="chevron-down" size={16} color="#fff" />
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.pickerWrapper}
-          onPress={() => setShowMonthPicker(true)}
-        >
-          <Ionicons name="calendar" size={20} color="#fff" style={styles.pickerIcon} />
-          <View style={styles.picker}>
-            <Text style={styles.pickerLabel}>Month:</Text>
-            <View style={styles.pickerValue}>
-              <Text style={styles.pickerValueText}>
-                {new Date(0, selectedMonth).toLocaleString('en-US', { month: 'short' })}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#fff" />
-            </View>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* 日期水平滚动列表 */}
-      <View style={styles.calendarContainer}>
-        <FlatList
-          ref={flatListRef}
-          data={dates}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.key}
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          contentContainerStyle={styles.flatListContainer}
-          getItemLayout={(data, index) => ({
-            length: 70,
-            offset: 70 * index,
-            index,
-          })}
-          initialScrollIndex={dates.findIndex(item => 
-            item.date.getDate() === today.getDate() &&
-            item.date.getMonth() === today.getMonth() &&
-            item.date.getFullYear() === today.getFullYear()
-          )}
-        />
-      </View>
-
-      {/* // 在 CalendarGrid 组件的返回部分，确保待办事项区域可以滚动 */}
-      <View style={styles.todoSection}>
-        <View style={styles.todoHeader}>
-          <Text style={styles.todoTitle}>
-            Tasks for {selectedDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </Text>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => setShowAddTodoModal(true)}
-          >
-            <Ionicons name="add" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        
-        <ScrollView style={styles.todoScrollView}>
-          {getTodosForDate(selectedDate).length > 0 ? (
-            getTodosForDate(selectedDate).map((todo, index) => (
-              <View key={index} style={styles.todoItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#87ceeb" />
-                <Text style={styles.todoText}>{todo}</Text>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.innerContainer}>
+          {/* 年份和月份选择器 */}
+          <View style={styles.pickerContainer}>
+            <TouchableOpacity 
+              style={styles.pickerWrapper}
+              onPress={() => setShowYearPicker(true)}
+            >
+              <Ionicons name="calendar" size={20} color="#fff" style={styles.pickerIcon} />
+              <View style={styles.picker}>
+                <Text style={styles.pickerLabel}>Year:</Text>
+                <View style={styles.pickerValue}>
+                  <Text style={styles.pickerValueText}>{selectedYear}</Text>
+                  <Ionicons name="chevron-down" size={16} color="#fff" />
+                </View>
               </View>
-            ))
-          ) : (
-            <Text style={styles.noTodosText}>No tasks scheduled for this day</Text>
-          )}
-        </ScrollView>
-      </View>
-
-      {/* 年份选择模态框 */}
-      <Modal
-        visible={showYearPicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowYearPicker(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowYearPicker(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Year</Text>
-              <ScrollView style={styles.modalScrollView}>
-                {yearOptions.map(year => (
-                  <TouchableOpacity
-                    key={year}
-                    style={[
-                      styles.modalOption,
-                      selectedYear === year && styles.selectedModalOption
-                    ]}
-                    onPress={() => handleYearChange(year)}
-                  >
-                    <Text style={[
-                      styles.modalOptionText,
-                      selectedYear === year && styles.selectedModalOptionText
-                    ]}>
-                      {year}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.pickerWrapper}
+              onPress={() => setShowMonthPicker(true)}
+            >
+              <Ionicons name="calendar" size={20} color="#fff" style={styles.pickerIcon} />
+              <View style={styles.picker}>
+                <Text style={styles.pickerLabel}>Month:</Text>
+                <View style={styles.pickerValue}>
+                  <Text style={styles.pickerValueText}>
+                    {new Date(0, selectedMonth).toLocaleString('en-US', { month: 'short' })}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color="#fff" />
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableWithoutFeedback>
-      </Modal>
 
-      {/* 月份选择模态框 */}
-      <Modal
-        visible={showMonthPicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMonthPicker(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowMonthPicker(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Month</Text>
-              <ScrollView style={styles.modalScrollView}>
-                {monthOptions.map(month => (
-                  <TouchableOpacity
-                    key={month}
-                    style={[
-                      styles.modalOption,
-                      selectedMonth === month && styles.selectedModalOption
-                    ]}
-                    onPress={() => handleMonthChange(month)}
-                  >
-                    <Text style={[
-                      styles.modalOptionText,
-                      selectedMonth === month && styles.selectedModalOptionText
-                    ]}>
-                      {new Date(0, month).toLocaleString('en-US', { month: 'long' })}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* 添加待办事项模态框 */}
-      <Modal
-        visible={showAddTodoModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowAddTodoModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.addTodoModalContent}>
-            <Text style={styles.modalTitle}>Add New Task</Text>
-            <Text style={styles.modalSubtitle}>
-              For {selectedDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+          {/* 日期水平滚动列表 */}
+          <View style={styles.calendarContainer}>
+            <FlatList
+              ref={flatListRef}
+              data={dates}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.key}
+              horizontal
+              showsHorizontalScrollIndicator={true}
+              contentContainerStyle={styles.flatListContainer}
+              getItemLayout={(data, index) => ({
+                length: 70,
+                offset: 70 * index,
+                index,
               })}
-            </Text>
-            
-            <TextInput
-              style={styles.todoInput}
-              placeholder="Enter task description"
-              placeholderTextColor="#888"
-              value={newTodoText}
-              onChangeText={setNewTodoText}
-              multiline
+              initialScrollIndex={dates.findIndex(item => 
+                item.date.getDate() === today.getDate() &&
+                item.date.getMonth() === today.getMonth() &&
+                item.date.getFullYear() === today.getFullYear()
+              )}
             />
-            
-            <View style={styles.modalButtons}>
+          </View>
+
+          {/* 待办事项区域 */}
+          <View style={[
+            styles.todoSection,
+            keyboardVisible && styles.todoSectionKeyboardActive
+          ]}>
+            <View style={styles.todoHeader}>
+              <Text style={styles.todoTitle}>
+                Tasks for {selectedDate.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </Text>
               <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowAddTodoModal(false)}
+                style={styles.addButton}
+                onPress={() => setShowAddTodoModal(true)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.addTodoButton]}
-                onPress={addTodoForSelectedDate}
-              >
-                <Text style={styles.addTodoButtonText}>Add Task</Text>
+                <Ionicons name="add" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
+            
+            <ScrollView 
+              style={styles.todoScrollView}
+              keyboardShouldPersistTaps="handled"
+            >
+              {getTodosForDate(selectedDate).length > 0 ? (
+                getTodosForDate(selectedDate).map((todo, index) => (
+                  <View key={index} style={styles.todoItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#87ceeb" />
+                    <Text style={styles.todoText}>{todo}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noTodosText}>No tasks scheduled for this day</Text>
+              )}
+            </ScrollView>
           </View>
+
+          {/* 年份选择模态框 */}
+          <Modal
+            visible={showYearPicker}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowYearPicker(false)}
+          >
+            <TouchableWithoutFeedback onPress={() => setShowYearPicker(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select Year</Text>
+                  <ScrollView style={styles.modalScrollView}>
+                    {yearOptions.map(year => (
+                      <TouchableOpacity
+                        key={year}
+                        style={[
+                          styles.modalOption,
+                          selectedYear === year && styles.selectedModalOption
+                        ]}
+                        onPress={() => handleYearChange(year)}
+                      >
+                        <Text style={[
+                          styles.modalOptionText,
+                          selectedYear === year && styles.selectedModalOptionText
+                        ]}>
+                          {year}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+
+          {/* 月份选择模态框 */}
+          <Modal
+            visible={showMonthPicker}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowMonthPicker(false)}
+          >
+            <TouchableWithoutFeedback onPress={() => setShowMonthPicker(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select Month</Text>
+                  <ScrollView style={styles.modalScrollView}>
+                    {monthOptions.map(month => (
+                      <TouchableOpacity
+                        key={month}
+                        style={[
+                          styles.modalOption,
+                          selectedMonth === month && styles.selectedModalOption
+                        ]}
+                        onPress={() => handleMonthChange(month)}
+                      >
+                        <Text style={[
+                          styles.modalOptionText,
+                          selectedMonth === month && styles.selectedModalOptionText
+                        ]}>
+                          {new Date(0, month).toLocaleString('en-US', { month: 'long' })}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+
+          {/* 添加待办事项模态框 - 使用简单方法避免位置跳动 */}
+          <Modal
+            visible={showAddTodoModal}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowAddTodoModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.addTodoModalContent}>
+                  <Text style={styles.modalTitle}>Add New Task</Text>
+                  <Text style={styles.modalSubtitle}>
+                    For {selectedDate.toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </Text>
+                  
+                  <TextInput
+                    style={styles.todoInput}
+                    placeholder="Enter task description"
+                    placeholderTextColor="#888"
+                    value={newTodoText}
+                    onChangeText={setNewTodoText}
+                    multiline
+                    autoFocus
+                  />
+                  
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => setShowAddTodoModal(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.addTodoButton]}
+                      onPress={addTodoForSelectedDate}
+                    >
+                      <Text style={styles.addTodoButtonText}>Add Task</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </Modal>
         </View>
-      </Modal>
-    </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     marginVertical: 10,
     width: '100%',
   },
+  innerContainer: {
+    flex: 1,
+  },
   calendarContainer: {
-    height: 80, // 确保有足够的高度显示滚动条
+    height: 80,
     marginBottom: 10,
   },
   pickerContainer: {
@@ -529,6 +573,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 20,
     marginHorizontal: 10,
+    flex: 1,
+  },
+  todoSectionKeyboardActive: {
+    marginBottom: 20,
   },
   todoHeader: {
     flexDirection: 'row',
@@ -587,6 +635,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     width: '90%',
+    maxWidth: 400,
   },
   modalScrollView: {
     maxHeight: 300,
@@ -655,7 +704,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   todoScrollView: {
-    maxHeight: 150, // 限制高度，确保不会占用太多空间
+    maxHeight: 150,
   },
 });
 

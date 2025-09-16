@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // Change this to your server URL
-  baseURL: 'http://10.0.0.106:4000',
+  baseURL: 'http://10.0.0.166:4000',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',

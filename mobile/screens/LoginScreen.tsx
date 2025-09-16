@@ -1,20 +1,51 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+// LoginScreen.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, Keyboard, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
+import AuthHeader from '../components/AuthHeader';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
-const LoginScreen = () => {
+const LoginScreen: React.FC = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const headerOpacity = useState(new Animated.Value(1))[0];
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        Animated.timing(headerOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [headerOpacity]);
 
   const handleLogin = () => {
-    // 要改成向后端发起请求验证用户信息
-    // 当前代码只是模拟登录
-
     if (username && password) {
       navigation.replace('Home'); 
     } else {
@@ -23,56 +54,54 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}  // iOS 和 Android 上的行为设置不同
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled" // 点击键盘外区域时关闭键盘，确保可点击
+    <View style={styles.container}>
+      <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
+        <AuthHeader />
+      </Animated.View>
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
       >
-        <View style={styles.inner}>
-          <View style={styles.topBox}>
-            <Image source={require('../assets/Logo.png')} style={styles.logo} />
-            <Text style={styles.logoText}>RenalFlow</Text>
-            <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
-          </View>
+        <ScrollView
+          contentContainerStyle={[styles.scrollContainer, isKeyboardVisible && styles.scrollContainerKeyboardVisible]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="User Name"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={username}
+              onChangeText={setUsername}
+            />
 
-          <View style={styles.bottomBox}>
-              <TextInput
-                style={styles.input}
-                placeholder="User Name"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                value={username}
-                onChangeText={setUsername} // 绑定输入
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword} // 绑定输入
-              />
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Login</Text>
+            <View style={styles.rowLinks}>
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={styles.linkText}>Forgot password</Text>
               </TouchableOpacity>
-
-              <View style={styles.rowLinks}>
-                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.linkText}>Forgot password</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                  <Text style={styles.linkText}>Register</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.linkText}>Register</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -80,50 +109,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  topBox: {
-    width: '100%',
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: '#000',
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 180,
   },
-  bottomBox:{
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-
+  keyboardAvoidingView: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 20,
+    paddingTop: 200, // 为Header留出空间
   },
-  inner: {
+  scrollContainerKeyboardVisible: {
+    paddingTop: 200, // 键盘弹出时减少顶部空间
+    justifyContent: 'flex-start',
+  },
+  formContainer: {
     padding: 24,
-    flex: 1,
-    justifyContent: 'space-around',
     alignItems: 'center',
-  },
-  logo: {
-    width: 190,
-    height: 190,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 25,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 2,
-    marginBottom: 5,
-    fontFamily: 'Courier',
-  },
-  subtitleText: {
-    color: '#fff',
-    fontSize: 11,
-    marginBottom: 80,
-    fontWeight: '500',
-    fontFamily: 'Courier',
+    justifyContent: 'center',
   },
   input: {
     width: '100%',
@@ -133,7 +147,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginVertical: 3,
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -153,18 +167,18 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: 15,
     letterSpacing: 2,
   },
   rowLinks: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 15,
+    marginTop: 12,
   },
   linkText: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    fontSize: 12,
     textDecorationLine: 'underline',
   },
 });

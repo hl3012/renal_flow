@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -30,7 +30,10 @@ const RegisterScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Image source={require('../assets/Logo.png')} style={styles.logo} />
+
       <Text style={styles.logoText}>RenalFlow</Text>
+      <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
 
       <TextInput
         style={styles.input}
@@ -71,53 +74,68 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000ff', 
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: 10, // 和 Login 一致
+  },
+  logo: {
+    width: 190,
+    height: 190,
+    marginBottom: -10,
   },
   logoText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    marginBottom: 30,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 3,
+    fontSize: 40,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 2,
+    marginBottom: 15,
+    fontFamily: 'Courier',
+  },
+  subtitleText: {
+    color: '#fff',
+    fontSize: 12,
+    marginBottom: 40,
+    fontWeight: '500',
+    fontFamily: 'Courier',
   },
   input: {
     width: '100%',
-    height: 40,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginVertical: 8,
+    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 7,
+    paddingHorizontal: 15,
+    marginVertical: 10,
     color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   button: {
     width: '100%',
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#5b933b',
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 7,
     marginTop: 15,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 18,
+    letterSpacing: 2,
   },
   link: {
-    marginTop: 12,
+    marginTop: 15,
   },
   linkText: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
     textDecorationLine: 'underline',
   },
 });

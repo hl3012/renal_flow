@@ -21,7 +21,7 @@ const RegisterScreen = () => {
       return;
     }
     try {
-      const res = await api.post('/api/auth/register', { email, password });
+      const res = await api.post('/api/auth/register', { name: userName, email, password });
       Alert.alert('Success', 'Registration successful');
       navigation.replace('Login'); 
     } catch (error: any) {

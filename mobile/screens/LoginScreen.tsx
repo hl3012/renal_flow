@@ -32,39 +32,44 @@ const LoginScreen = () => {
         keyboardShouldPersistTaps="handled" // 点击键盘外区域时关闭键盘，确保可点击
       >
         <View style={styles.inner}>
-          <Image source={require('../assets/Logo.png')} style={styles.logo} />
-          <Text style={styles.logoText}>RenalFlow</Text>
-          <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="User Name"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value={username}
-            onChangeText={setUsername} // 绑定输入
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword} // 绑定输入
-          />
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-
-          <View style={styles.rowLinks}>
-            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-              <Text style={styles.linkText}>Forgot password</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>Register</Text>
-            </TouchableOpacity>
+          <View style={styles.topBox}>
+            <Image source={require('../assets/Logo.png')} style={styles.logo} />
+            <Text style={styles.logoText}>RenalFlow</Text>
+            <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
           </View>
+
+          <View style={styles.bottomBox}>
+              <TextInput
+                style={styles.input}
+                placeholder="User Name"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                value={username}
+                onChangeText={setUsername} // 绑定输入
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword} // 绑定输入
+              />
+
+              <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>Login</Text>
+              </TouchableOpacity>
+
+              <View style={styles.rowLinks}>
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                  <Text style={styles.linkText}>Forgot password</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <Text style={styles.linkText}>Register</Text>
+                </TouchableOpacity>
+              </View>
+          </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -77,6 +82,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  topBox: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomBox:{
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+
   },
   scrollContainer: {
     flexGrow: 1,
@@ -92,19 +108,19 @@ const styles = StyleSheet.create({
   logo: {
     width: 190,
     height: 190,
-    marginBottom: -10,
+    marginBottom: 5,
   },
   logoText: {
-    fontSize: 40,
+    fontSize: 25,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 2,
-    marginBottom: 15,
+    marginBottom: 5,
     fontFamily: 'Courier',
   },
   subtitleText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 80,
     fontWeight: '500',
     fontFamily: 'Courier',
@@ -115,7 +131,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 7,
     paddingHorizontal: 15,
-    marginVertical: 10,
+    marginVertical: 3,
     color: '#fff',
     fontSize: 16,
     borderWidth: 1,

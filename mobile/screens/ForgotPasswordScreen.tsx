@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     marginBottom: -10,
   },
   logoText: {
-    fontSize: 40,
+    fontSize: 25,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 2,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   subtitleText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 40,
     fontWeight: '500',
     fontFamily: 'Courier',

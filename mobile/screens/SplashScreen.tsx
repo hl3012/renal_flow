@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     marginTop: -15, 
-    fontSize: 35,
+    fontSize: 25,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 1,
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   slogan: {
     marginTop: 15, 
-    fontSize: 15,
+    fontSize: 11,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     fontFamily: 'Courier',

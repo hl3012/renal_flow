@@ -8,25 +8,28 @@ const SplashScreen = () => {
   type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
   const navigation = useNavigation<SplashScreenNavigationProp>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1500,
+        duration: 1200,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 5,
+        friction: 6,
         useNativeDriver: true,
       }),
     ]).start();
 
     const timer = setTimeout(() => {
-      navigation.replace('Login');
-    }, 2000);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -40,8 +43,8 @@ const SplashScreen = () => {
           transform: [{ scale: scaleAnim }],
         }}
       >
-        <Image source={require('../assets/Logo.png')} style={[styles.logo, { opacity: 0.6 }]} />
-        <Text style={[styles.logoText, { opacity: 0.6 }]}>RenalFlow</Text>
+        <Image source={require('../assets/Logo.png')} style={styles.logo} />
+        <Text style={styles.logoText}>RenalFlow</Text>
         <Text style={styles.slogan}>From daily metrics to better kidney care</Text>
       </Animated.View>
     </View>
@@ -53,30 +56,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000000ff', 
+    backgroundColor: '#000', // 全黑
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 75, 
-    height: 75,
-    marginBottom: 5,
+    width: 190,
+    height: 190,
   },
   logoText: {
-    fontSize: 28, 
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 3,
+    marginTop: -15, 
+    fontSize: 35,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 1,
+    fontFamily: 'Courier',
   },
   slogan: {
-    fontSize: 14, 
-    color: '#a69f9f71', 
-    marginTop: 5,
+    marginTop: 15, 
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
+    fontFamily: 'Courier',
   },
 });
 

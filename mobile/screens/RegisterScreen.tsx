@@ -1,19 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform, Keyboard, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import api from '../utils/axios';
+import AuthHeader from '../components/AuthHeader';
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
 const RegisterScreen = () => {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const headerOpacity = useState(new Animated.Value(1))[0];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        Animated.timing(headerOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [headerOpacity]);
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
@@ -30,59 +63,64 @@ const RegisterScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}  // iOS 和 Android 上的行为设置不同
-          style={styles.container}
+    <View style={styles.container}>
+      <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
+        <AuthHeader />
+      </Animated.View>
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollContainer, isKeyboardVisible && styles.scrollContainerKeyboardVisible]}
+          keyboardShouldPersistTaps="handled"
         >
-      <View style={styles.container}>
-        <Image source={require('../assets/Logo.png')} style={styles.logo} />
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="User Name"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={userName}
+              onChangeText={setUserName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
 
-        <Text style={styles.logoText}>RenalFlow</Text>
-        <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
+            <TouchableOpacity style={styles.button} onPress={handleRegister}>
+              <Text style={styles.buttonText}>Register</Text>
+            </TouchableOpacity>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="User Name"
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          value={userName}
-          onChangeText={setUserName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Register</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-          <Text style={styles.linkText}>Back to Login</Text>
-        </TouchableOpacity>
-      </View>
-
-
-        </KeyboardAvoidingView>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
+              <Text style={styles.linkText}>Back to Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -90,29 +128,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    justifyContent: 'center',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: '#000',
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
     alignItems: 'center',
-    paddingHorizontal: 24, 
+    justifyContent: 'center',
+    height: 180,
   },
-  logo: {
-    width: 190,
-    height: 190,
-    marginBottom: -10,
+  keyboardAvoidingView: {
+    flex: 1,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 2,
-    marginBottom: 15,
-    fontFamily: 'Courier',
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingTop: 200, // 为Header留出空间
   },
-  subtitleText: {
-    color: '#fff',
-    fontSize: 12,
-    marginBottom: 40,
-    fontWeight: '500',
-    fontFamily: 'Courier',
+  scrollContainerKeyboardVisible: {
+    paddingTop: 87, // 键盘弹出时减少顶部空间
+    justifyContent: 'flex-start',
+  },
+  formContainer: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     width: '100%',
@@ -120,9 +164,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 7,
     paddingHorizontal: 15,
-    marginVertical: 10,
+    marginVertical: 3,
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -142,15 +186,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: 15,
     letterSpacing: 2,
   },
-  link: {
+  backLink: {
     marginTop: 15,
   },
   linkText: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    fontSize: 12,
     textDecorationLine: 'underline',
   },
 });

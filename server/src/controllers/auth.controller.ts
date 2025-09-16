@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
-import User from '../models/user.model';
+import User, { IUser } from '../models/user.model';
+import { generateAccessToken, generateRefreshToken, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../utils/jwt';
+import { redis } from '../lib/redis';
+import { HydratedDocument } from 'mongoose';
+import jwt from 'jsonwebtoken';
+
+
 
 export const register = async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
@@ -12,8 +18,13 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const user = new User({ name, email, password });
+        const user: HydratedDocument<IUser> = new User({ name, email, password });
         await user.save();
+
+        // generate token and store refreshtoken to redis
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+        await redis.set( `refresh_token:${user._id.toString()}`, refreshToken, "EX", 7 * 24 * 60 * 60);
 
         return res.status(201).json({ message: 'Registration successful',
             user: {
@@ -24,7 +35,11 @@ export const register = async (req: Request, res: Response) => {
          });
     } catch (error) {
         console.error("Registration failed", error);
-        return res.status(500).json({ message: 'Registration failed' });
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        return res.status(500).json({ message: `Registration failed: ${errorMessage}` });
     }
 };
 
@@ -43,4 +58,25 @@ export const logout = async (req: Request, res: Response) => {
 };
 export const getMe = async (req: Request, res: Response) => {
     res.status(200).json({ message: 'User details' });
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'No refresh token provided' });
+    }
+    
+    try {
+        const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { userId: string };
+        const savedRefreshToken = await redis.get(`refresh_token:${payload.userId}`);
+
+        if (!savedRefreshToken || savedRefreshToken !== refreshToken) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        // const newAccessToken = generateAccessToken(payload.userId);
+        // return res.status(200).json({ accessToken: newAccessToken });
+    }catch (error) {
+
+    }
 };

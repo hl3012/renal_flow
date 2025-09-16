@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -13,6 +13,7 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userName, setUserName] = useState('');
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
@@ -29,45 +30,59 @@ const RegisterScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../assets/Logo.png')} style={styles.logo} />
+    <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}  // iOS 和 Android 上的行为设置不同
+          style={styles.container}
+        >
+      <View style={styles.container}>
+        <Image source={require('../assets/Logo.png')} style={styles.logo} />
 
-      <Text style={styles.logoText}>RenalFlow</Text>
-      <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
+        <Text style={styles.logoText}>RenalFlow</Text>
+        <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="rgba(255,255,255,0.5)"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="rgba(255,255,255,0.5)"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        placeholderTextColor="rgba(255,255,255,0.5)"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="User Name"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          value={userName}
+          onChangeText={setUserName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Register</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-        <Text style={styles.linkText}>Back to Login</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
+          <Text style={styles.linkText}>Back to Login</Text>
+        </TouchableOpacity>
+      </View>
+
+
+        </KeyboardAvoidingView>
   );
 };
 
@@ -77,7 +92,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10, // 和 Login 一致
+    paddingHorizontal: 24, 
   },
   logo: {
     width: 190,

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import api from '../utils/axios';
-import { Ionicons } from '@expo/vector-icons'; 
+import AuthHeader from '../components/AuthHeader';
 
 type ForgotResetScreenProp = StackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 
-const ForgotResetScreen = () => {
+const ForgotResetScreen: React.FC = () => {
   const navigation = useNavigation<ForgotResetScreenProp>();
   const [stage, setStage] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState('');
@@ -48,58 +48,65 @@ const ForgotResetScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-
-      <TouchableOpacity
-        style={styles.back}
-        onPress={() => navigation.goBack()}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
       >
-        <Ionicons name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
+        <View style={styles.inner}>
+          <AuthHeader />
 
-      <Image source={require('../assets/Logo.png')} style={styles.logo} />
-
-      <Text style={styles.logoText}>RenalFlow</Text>
-      <Text style={styles.subtitleText}>From daily metrics to better kidney care</Text>
-
-      {stage === 'email' ? (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your email"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSendEmail}>
-            <Text style={styles.buttonText}>Send Reset Link</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="New Password"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-            <Text style={styles.buttonText}>Reset Password</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+          <View style={styles.bottomBox}>
+            {stage === 'email' ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                />
+                <TouchableOpacity style={styles.button} onPress={handleSendEmail}>
+                  <Text style={styles.buttonText}>Send Reset Link</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
+                  <Text style={styles.linkText}>Back to Login</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="New Password"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+                <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
+                  <Text style={styles.buttonText}>Reset Password</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
+                  <Text style={styles.linkText}>Back to Login</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -107,34 +114,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  inner: {
+    padding: 24,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
   },
-  back: {
+  bottomBox: {
     position: 'absolute',
-    top: 50,
-    left: 20,
-  },
-  logo: {
-    width: 190,
-    height: 190,
-    marginBottom: -10,
-  },
-  logoText: {
-    fontSize: 25,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 2,
-    marginBottom: 15,
-    fontFamily: 'Courier',
-  },
-  subtitleText: {
-    color: '#fff',
-    fontSize: 11,
-    marginBottom: 40,
-    fontWeight: '500',
-    fontFamily: 'Courier',
+    bottom: 100,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     width: '100%',
@@ -142,9 +138,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 7,
     paddingHorizontal: 15,
-    marginVertical: 10,
+    marginVertical: 3,
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -164,8 +160,16 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: 15,
     letterSpacing: 2,
+  },
+  backLink: {
+    marginTop: 15,
+  },
+  linkText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
 });
 

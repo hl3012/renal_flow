@@ -9,6 +9,7 @@ import HomeScreen from './screens/HomeScreen';
 import HealthSummaryScreen from './screens/HealthSummaryScreen';
 import MedicineHistoryScreen from './screens/MedicineHistoryScreen';
 import LabResultsScreen from './screens/LabResultsScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -21,6 +22,8 @@ export type RootStackParamList = {
   HealthSummary: undefined;
   MedicineHistory: undefined;
   LabResults: undefined;
+
+  Profile: undefined;
 
 
 };
@@ -46,6 +49,9 @@ const App = () => (
       <Stack.Screen name="HealthSummary" component={HealthSummaryScreen}  options={{ headerShown: false }} />
       <Stack.Screen name="MedicineHistory" component={MedicineHistoryScreen}  options={{ headerShown: false }} />
       <Stack.Screen name="LabResults" component={LabResultsScreen}  options={{ headerShown: false }} />
+
+
+      <Stack.Screen name="Profile" component={ProfileScreen}  options={{ headerShown: false }} />
       
     </Stack.Navigator>
   </NavigationContainer>

@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 5,
+    fontWeight: '400',
     marginTop: 2,
   },
   activeTabText: {

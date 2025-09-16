@@ -656,7 +656,16 @@ git checkout feature/login
 # 之后你修改文件、提交
 git add .
 git commit -m "feat: add login page"
-git push -u origin MA    # 推送到远程
+
+# 拉取远程主分支最新代码合并（或rebase）
+git fetch origin
+git rebase origin/main
+
+# 解决冲突（如果有），然后继续rebase
+# git add conflicted_file.js
+# git rebase --continue
+
+git push -u origin XXX    # 推送到远程
 ```
 
 更新项目前从git上拉取最新的代码
@@ -664,7 +673,7 @@ git push -u origin MA    # 推送到远程
 ```
 git checkout main
 git pull origin main
-git checkout MA
+git checkout XXX
 git merge main
 ```
 
@@ -673,6 +682,10 @@ git merge main
 # 用户登陆注册功能
 
 ## 后端
+
+```tsx
+
+```
 
 
 

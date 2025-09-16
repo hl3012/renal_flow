@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 //to make sure this is defined correctly
 export interface IUser extends Document {
-    _id: Types.ObjectId; //declared
+    _id: Types.ObjectId;
     name: string;
     email: string;
     password: string;

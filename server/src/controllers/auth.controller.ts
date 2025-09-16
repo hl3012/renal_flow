@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import User, { IUser } from '../models/user.model';
-import { generateAccessToken, generateRefreshToken, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../utils/jwt';
+import { generateAccessToken, generateRefreshToken} from '../utils/jwt';
 import { redis } from '../lib/redis';
 import { HydratedDocument } from 'mongoose';
 import jwt from 'jsonwebtoken';
-
-
+import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../config/env';
+import { Types } from 'mongoose';
 
 export const register = async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
@@ -70,13 +70,24 @@ export const refreshToken = async (req: Request, res: Response) => {
         const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { userId: string };
         const savedRefreshToken = await redis.get(`refresh_token:${payload.userId}`);
 
-        if (!savedRefreshToken || savedRefreshToken !== refreshToken) {
+        if (!savedRefreshToken) {
+            return res.status(401).json({ message: 'No refresh token' });
+        }
+        if (savedRefreshToken !== refreshToken) {
             return res.status(401).json({ message: 'Invalid refresh token' });
         }
 
-        // const newAccessToken = generateAccessToken(payload.userId);
-        // return res.status(200).json({ accessToken: newAccessToken });
+        const newAccessToken = generateAccessToken(new Types.ObjectId(payload.userId));
+        const newRefreshToken = generateRefreshToken(new Types.ObjectId(payload.userId)); //renew refresh token for safety
+        
+        await redis.set(`refresh_token:${payload.userId}`, newRefreshToken, "EX", 7 * 24 * 60 * 60);
+        return res.status(200).json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
     }catch (error) {
-
+        console.error("Refresh token error", error);
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        return res.status(500).json({ message: `Refresh token failed: ${errorMessage}` });
     }
 };

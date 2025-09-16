@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { 
+  View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, 
+  TouchableWithoutFeedback, ScrollView, TextInput, Alert, Dimensions 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 interface CalendarGridProps {
   onDateSelect?: (date: Date) => void;
@@ -20,9 +25,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
   const [dates, setDates] = useState<DateItem[]>([]);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showAddTodoModal, setShowAddTodoModal] = useState(false);
+  const [newTodoText, setNewTodoText] = useState('');
   const flatListRef = useRef<FlatList>(null);
   
-  // 示例待办事项数据
+  // 待办事项数据
   const [todos, setTodos] = useState<{[key: string]: string[]}>({
     '2025-3-11': ['Follow-up appointment with Dr. Smith at 10:00 AM', 'Take blood pressure medication'],
     '2025-3-15': ['Lab test at Central Hospital', 'Pick up prescription'],
@@ -32,11 +39,16 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
 
   useEffect(() => {
     generateDates(selectedYear, selectedMonth);
-    // 滚动到当前日期或选中的日期
-    setTimeout(() => {
-      scrollToDate(selectedDate);
-    }, 100);
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    // 确保日期生成完成后再滚动
+    if (dates.length > 0) {
+      setTimeout(() => {
+        scrollToDate(selectedDate);
+      }, 100);
+    }
+  }, [dates]);
 
   const generateDates = (year: number, month: number) => {
     const dateArray: DateItem[] = [];
@@ -46,8 +58,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
     // 添加前面的空白日期（如果需要）
     const startDay = firstDay.getDay();
     for (let i = 0; i < startDay; i++) {
-      const prevDate = new Date(year, month, -i);
-      dateArray.push({
+      const prevDate = new Date(year, month, 1 - i);
+      dateArray.unshift({
         date: prevDate,
         isCurrentMonth: false,
         key: `prev-${i}`
@@ -61,6 +73,17 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
         date: currentDate,
         isCurrentMonth: true,
         key: `current-${d}`
+      });
+    }
+    
+    // 添加后面的空白日期（如果需要）
+    const endDay = lastDay.getDay();
+    for (let i = 1; i < (7 - endDay); i++) {
+      const nextDate = new Date(year, month + 1, i);
+      dateArray.push({
+        date: nextDate,
+        isCurrentMonth: false,
+        key: `next-${i}`
       });
     }
     
@@ -97,7 +120,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
     setShowMonthPicker(false);
     
     // 如果切换月份后，检查当前选中的日期是否在新月份中
-    const newDate = new Date(selectedYear, month, 1);
+    const newDate = new Date(selectedYear, month, Math.min(selectedDate.getDate(), new Date(selectedYear, month + 1, 0).getDate()));
     setSelectedDate(newDate);
   };
 
@@ -106,7 +129,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
     setShowYearPicker(false);
     
     // 如果切换年份后，检查当前选中的日期是否在新年份中
-    const newDate = new Date(year, selectedMonth, 1);
+    const newDate = new Date(year, selectedMonth, Math.min(selectedDate.getDate(), new Date(year, selectedMonth + 1, 0).getDate()));
     setSelectedDate(newDate);
   };
 
@@ -117,6 +140,25 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
   const getTodosForDate = (date: Date) => {
     const key = formatDateKey(date);
     return todos[key] || [];
+  };
+
+  const addTodoForSelectedDate = () => {
+    if (!newTodoText.trim()) {
+      Alert.alert('Error', 'Please enter a task description');
+      return;
+    }
+    
+    const key = formatDateKey(selectedDate);
+    const updatedTodos = {
+      ...todos,
+      [key]: [...(todos[key] || []), newTodoText]
+    };
+    
+    setTodos(updatedTodos);
+    setNewTodoText('');
+    setShowAddTodoModal(false);
+    
+    Alert.alert('Success', 'Task added successfully');
   };
 
   const isToday = (date: Date) => {
@@ -136,6 +178,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
       date.getFullYear() === selectedDate.getFullYear();
 
     const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const hasTodos = getTodosForDate(date).length > 0;
 
     return (
       <TouchableOpacity
@@ -163,6 +206,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
         ]}>
           {date.getDate()}
         </Text>
+        {hasTodos && <View style={styles.todoIndicator} />}
       </TouchableOpacity>
     );
   };
@@ -207,31 +251,47 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
       </View>
 
       {/* 日期水平滚动列表 */}
-      <FlatList
-        ref={flatListRef}
-        data={dates}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.key}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContainer}
-        getItemLayout={(data, index) => ({
-          length: 70,
-          offset: 70 * index,
-          index,
-        })}
-      />
+      <View style={styles.calendarContainer}>
+        <FlatList
+          ref={flatListRef}
+          data={dates}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.key}
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={styles.flatListContainer}
+          getItemLayout={(data, index) => ({
+            length: 70,
+            offset: 70 * index,
+            index,
+          })}
+          initialScrollIndex={dates.findIndex(item => 
+            item.date.getDate() === today.getDate() &&
+            item.date.getMonth() === today.getMonth() &&
+            item.date.getFullYear() === today.getFullYear()
+          )}
+        />
+      </View>
 
       {/* 选中日期的待办事项 */}
       <View style={styles.todoSection}>
-        <Text style={styles.todoTitle}>
-          Tasks for {selectedDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </Text>
+        <View style={styles.todoHeader}>
+          <Text style={styles.todoTitle}>
+            Tasks for {selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setShowAddTodoModal(true)}
+          >
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        
         {getTodosForDate(selectedDate).length > 0 ? (
           getTodosForDate(selectedDate).map((todo, index) => (
             <View key={index} style={styles.todoItem}>
@@ -313,6 +373,53 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ onDateSelect }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* 添加待办事项模态框 */}
+      <Modal
+        visible={showAddTodoModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAddTodoModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.addTodoModalContent}>
+            <Text style={styles.modalTitle}>Add New Task</Text>
+            <Text style={styles.modalSubtitle}>
+              For {selectedDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </Text>
+            
+            <TextInput
+              style={styles.todoInput}
+              placeholder="Enter task description"
+              placeholderTextColor="#888"
+              value={newTodoText}
+              onChangeText={setNewTodoText}
+              multiline
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowAddTodoModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.addTodoButton]}
+                onPress={addTodoForSelectedDate}
+              >
+                <Text style={styles.addTodoButtonText}>Add Task</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -321,6 +428,10 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
     width: '100%',
+  },
+  calendarContainer: {
+    height: 80, // 确保有足够的高度显示滚动条
+    marginBottom: 10,
   },
   pickerContainer: {
     flexDirection: 'row',
@@ -368,13 +479,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   todayItem: {
     backgroundColor: '#2f9cff',
   },
   selectedItem: {
     borderWidth: 2,
-    borderColor: '#87ceeb', // 浅蓝色边框
+    borderColor: '#87ceeb',
     backgroundColor: '#4a4a4a',
   },
   nonCurrentMonth: {
@@ -394,11 +506,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   selectedText: {
-    color: '#87ceeb', // 浅蓝色文字
+    color: '#87ceeb',
     fontWeight: '700',
   },
   nonCurrentMonthText: {
     color: '#888',
+  },
+  todoIndicator: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#87ceeb',
   },
   todoSection: {
     backgroundColor: '#1E1E1E',
@@ -407,11 +528,25 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginHorizontal: 10,
   },
+  todoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   todoTitle: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 10,
+    flex: 1,
+  },
+  addButton: {
+    backgroundColor: '#2f9cff',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   todoItem: {
     flexDirection: 'row',
@@ -445,6 +580,12 @@ const styles = StyleSheet.create({
     width: '80%',
     maxHeight: '60%',
   },
+  addTodoModalContent: {
+    backgroundColor: '#2e2e2e',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+  },
   modalScrollView: {
     maxHeight: 300,
   },
@@ -452,7 +593,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    color: '#ccc',
+    fontSize: 14,
+    marginBottom: 20,
     textAlign: 'center',
   },
   modalOption: {
@@ -470,6 +617,39 @@ const styles = StyleSheet.create({
   },
   selectedModalOptionText: {
     color: '#000',
+    fontWeight: '600',
+  },
+  todoInput: {
+    backgroundColor: '#3a3a3a',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#555',
+  },
+  addTodoButton: {
+    backgroundColor: '#2f9cff',
+  },
+  cancelButtonText: {
+    color: '#fff',
+  },
+  addTodoButtonText: {
+    color: '#fff',
     fontWeight: '600',
   },
 });

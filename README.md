@@ -4,7 +4,7 @@ A full-stack mobile application for kidney health management.
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 RenalFlow/
 ├── mobile/ # React Native Expo App (Frontend)
@@ -12,9 +12,6 @@ RenalFlow/
 ├── docs/ # Project documentation
 └── README.md # This file
 
-yaml
-Copy code
 
 ---
 
-## 🚀 Getting Started
